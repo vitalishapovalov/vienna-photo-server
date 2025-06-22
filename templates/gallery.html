@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery - Vienna Photo Booth</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🖼️ Vienna Photo Booth Gallery</h1>
+            <p>Browse and download your processed photos</p>
+            <div class="status-indicators">
+                <span id="serverStatus" class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connecting...</span>
+                </span>
+                <span id="printerStatus" class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Printer: Checking...</span>
+                </span>
+            </div>
+            <div class="navigation">
+                <a href="/" class="nav-btn">
+                    <span class="btn-icon">📸</span>
+                    Photo Booth
+                </a>
+                <a href="/system" class="nav-btn">
+                    <span class="btn-icon">⚙️</span>
+                    System Info
+                </a>
+                <a href="/gallery" class="nav-btn active">
+                    <span class="btn-icon">🖼️</span>
+                    Gallery
+                </a>
+            </div>
+        </header>
+
+        <main>
+            <!-- Gallery Section -->
+            <section class="gallery-section">
+                <div class="section-header">
+                    <h2>🖼️ Photo Gallery</h2>
+                    <p>Browse and manage your processed photos</p>
+                </div>
+                
+                <!-- Gallery Controls -->
+                <div class="gallery-controls">
+                    <div class="controls-container">
+                        <div class="control-group">
+                            <button id="refreshGallery" class="btn btn-primary">
+                                <span class="btn-icon">🔄</span>
+                                Refresh Gallery
+                            </button>
+                            <button id="selectAll" class="btn btn-outline">
+                                <span class="btn-icon">☑️</span>
+                                Select All
+                            </button>
+                            <button id="deselectAll" class="btn btn-outline">
+                                <span class="btn-icon">❌</span>
+                                Deselect All
+                            </button>
+                        </div>
+                        
+                        <div class="control-group">
+                            <button id="deleteSelected" class="btn btn-danger" disabled>
+                                <span class="btn-icon">🗑️</span>
+                                Delete Selected
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="gallery-stats">
+                        <span id="totalImages">Total: 0 images</span>
+                        <span id="selectedCount">Selected: 0</span>
+                        <span id="totalSize">Size: 0 Bytes</span>
+                    </div>
+                </div>
+                
+                <!-- Gallery Grid -->
+                <div class="gallery-grid" id="galleryGrid">
+                    <div class="gallery-loading">
+                        <div class="loading-spinner"></div>
+                        <span>Loading gallery...</span>
+                    </div>
+                </div>
+                
+                <div class="gallery-empty" id="galleryEmpty" style="display: none;">
+                    <div class="empty-state">
+                        <span class="empty-icon">📸</span>
+                        <h3>No photos yet</h3>
+                        <p>Take some photos in the Photo Booth to see them here!</p>
+                        <a href="/" class="btn btn-primary">
+                            <span class="btn-icon">📸</span>
+                            Go to Photo Booth
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loading Overlay -->
+            <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+                <div class="loading-content">
+                    <div class="loading-spinner"></div>
+                    <p id="loadingMessage">Processing...</p>
+                </div>
+            </div>
+
+            <!-- Error Modal -->
+            <div id="errorModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>⚠️ Error</h3>
+                        <button id="closeErrorModal" class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="errorMessage"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="dismissError" class="btn btn-primary">OK</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirmation Modal -->
+            <div id="confirmModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>⚠️ Confirm Action</h3>
+                        <button id="closeConfirmModal" class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="confirmMessage"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="cancelAction" class="btn btn-secondary">Cancel</button>
+                        <button id="confirmAction" class="btn btn-danger">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/gallery.js"></script>
+</body>
+</html> 

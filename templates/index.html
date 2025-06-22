@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vienna Photo Booth</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📸 Vienna Photo Booth</h1>
+            <p>Take a photo, choose a frame, and print your memories!</p>
+            <div class="status-indicators">
+                <span id="serverStatus" class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connecting...</span>
+                </span>
+                <span id="printerStatus" class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Printer: Unknown</span>
+                </span>
+            </div>
+            <div class="navigation">
+                <a href="/" class="nav-btn active">
+                    <span class="btn-icon">📸</span>
+                    Photo Booth
+                </a>
+                <a href="/system" class="nav-btn">
+                    <span class="btn-icon">⚙️</span>
+                    System Info
+                </a>
+                <a href="/gallery" class="nav-btn">
+                    <span class="btn-icon">🖼️</span>
+                    Gallery
+                </a>
+            </div>
+        </header>
+
+        <main>
+            <!-- Frame Selection -->
+            <section class="frame-section">
+                <div class="section-header">
+                    <h2>🖼️ Choose Your Frame</h2>
+                    <p>Select a decorative frame for your photo. The camera will be adjusted to match the frame's photo area.</p>
+                </div>
+                
+                <div class="frame-options">
+                    <!-- Frame options will be loaded dynamically -->
+                </div>
+                
+                <div class="frame-loading" id="frameLoading">
+                    <div class="loading-spinner small"></div>
+                    <span>Loading frames...</span>
+                </div>
+                
+                <div class="frame-management-link">
+                    <p>💡 Need to upload or manage frames? <a href="/system#frame-management" class="link-btn">Go to Frame Management</a></p>
+                </div>
+            </section>
+
+            <!-- Camera Section -->
+            <section class="camera-section" style="display: none;">
+                <div class="section-header">
+                    <h2>📷 Take Photo</h2>
+                    <p>Position yourself in the frame and take a photo. Camera size is optimized for your selected frame.</p>
+                </div>
+                
+                <!-- Mobile Camera Notice -->
+                <div id="mobileCameraNotice" class="mobile-notice" style="display: none;">
+                    <div class="notice-content">
+                        <span class="notice-icon">📱</span>
+                        <div class="notice-text">
+                            <strong>Mobile Camera Access:</strong>
+                            <ul>
+                                <li>Camera access requires HTTPS on mobile devices</li>
+                                <li>Please allow camera permissions when prompted</li>
+                                <li>For best results, use Chrome or Safari on iOS</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="camera-container">
+                    <video id="video" autoplay playsinline muted></video>
+                    <canvas id="canvas" style="display: none;"></canvas>
+                    <div class="camera-overlay">
+                        <div class="camera-instructions">
+                            <span>Position yourself in the frame</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Filter Controls -->
+                <div class="filter-controls">
+                    <h3>🎨 Photo Filters</h3>
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="none">
+                            <span class="filter-icon">📷</span>
+                            <span class="filter-name">Normal</span>
+                        </button>
+                        <button class="filter-btn" data-filter="blackwhite">
+                            <span class="filter-icon">⚫</span>
+                            <span class="filter-name">Black & White</span>
+                        </button>
+                        <button class="filter-btn" data-filter="sepia">
+                            <span class="filter-icon">🟤</span>
+                            <span class="filter-name">Sepia</span>
+                        </button>
+                        <button class="filter-btn" data-filter="oldcamera">
+                            <span class="filter-icon">📷</span>
+                            <span class="filter-name">Old Camera</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="camera-controls">
+                    <button id="startCamera" class="btn btn-primary">
+                        <span class="btn-icon">📹</span>
+                        Start Camera
+                    </button>
+                    <button id="switchCamera" class="btn btn-outline" style="display: none;">
+                        <span class="btn-icon">🔄</span>
+                        Switch Camera
+                    </button>
+                    <button id="takePhoto" class="btn btn-success" disabled>
+                        <span class="btn-icon">📸</span>
+                        Take Photo
+                    </button>
+                    <button id="takePhotoAgain" class="btn btn-success" style="display: none;">
+                        <span class="btn-icon">📸</span>
+                        Take Photo
+                    </button>
+                </div>
+            </section>
+
+            <!-- Preview Section -->
+            <section class="preview-section" style="display: none;">
+                <div class="section-header">
+                    <h2>👀 Photo Preview</h2>
+                    <p>Review your captured photo with the selected frame</p>
+                    <button id="backToCamera" class="btn btn-outline btn-small">
+                        <span class="btn-icon">←</span>
+                        Back to Camera
+                    </button>
+                </div>
+                
+                <div class="preview-container">
+                    <img id="photoPreview" alt="Photo preview">
+                    <div class="preview-controls">
+                        <button id="downloadPhoto" class="btn btn-outline">
+                            <span class="btn-icon">💾</span>
+                            Download
+                        </button>
+                        <button id="downloadOriginal" class="btn btn-outline">
+                            <span class="btn-icon">📷</span>
+                            Download Original
+                        </button>
+                    </div>
+                    <div id="previewStatus" class="preview-status"></div>
+                </div>
+            </section>
+
+            <!-- Print Section -->
+            <section class="print-section" style="display: none;">
+                <div class="section-header">
+                    <h2>🖨️ Print Your Photo</h2>
+                    <p>Print your photo with the selected frame</p>
+                </div>
+                
+                <div class="print-controls">
+                    <button id="printPhoto" class="btn btn-print">
+                        <span class="btn-icon">🖨️</span>
+                        Print Photo
+                    </button>
+                    <button id="processOnly" class="btn btn-outline">
+                        <span class="btn-icon">✨</span>
+                        Process Only
+                    </button>
+                </div>
+                
+                <div id="printStatus" class="status-message"></div>
+                
+                <!-- Printer Management -->
+                <div class="printer-management">
+                    <h3>Printer Settings</h3>
+                    <div class="printer-info">
+                        <div class="printer-selector">
+                            <label for="printerSelect">Select Printer:</label>
+                            <select id="printerSelect" class="form-select">
+                                <option value="">Loading printers...</option>
+                            </select>
+                        </div>
+                        <button id="refreshPrinters" class="btn btn-small">
+                            <span class="btn-icon">🔄</span>
+                            Refresh
+                        </button>
+                    </div>
+                    <div class="printer-queue">
+                        <h4>Print Queue</h4>
+                        <div id="printQueue" class="queue-list">
+                            <span class="queue-empty">No jobs in queue</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loading Overlay -->
+            <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+                <div class="loading-content">
+                    <div class="loading-spinner"></div>
+                    <p id="loadingMessage">Processing...</p>
+                </div>
+            </div>
+
+            <!-- Error Modal -->
+            <div id="errorModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>⚠️ Error</h3>
+                        <button id="closeErrorModal" class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="errorMessage"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="dismissError" class="btn btn-primary">OK</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/script.js"></script>
+</body>
+</html> 

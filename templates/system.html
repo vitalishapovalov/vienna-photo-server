@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Information - Vienna Photo Booth</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ Vienna Photo Booth - System Information</h1>
+            <p>Monitor and manage your photo booth system</p>
+            <div class="status-indicators">
+                <span id="serverStatus" class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connecting...</span>
+                </span>
+                <span id="printerStatus" class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Printer: Unknown</span>
+                </span>
+            </div>
+            <div class="navigation">
+                <a href="/" class="nav-btn">
+                    <span class="btn-icon">📸</span>
+                    Photo Booth
+                </a>
+                <a href="/system" class="nav-btn active">
+                    <span class="btn-icon">⚙️</span>
+                    System Info
+                </a>
+                <a href="/gallery" class="nav-btn">
+                    <span class="btn-icon">🖼️</span>
+                    Gallery
+                </a>
+            </div>
+        </header>
+
+        <main>
+            <!-- System Information -->
+            <section class="system-section">
+                <div class="section-header">
+                    <h2>⚙️ System Information</h2>
+                    <p>Server status and configuration</p>
+                </div>
+                
+                <div class="system-grid">
+                    <div class="system-card">
+                        <h3>Server Status</h3>
+                        <div id="serverInfo" class="system-info">
+                            <div class="info-item">
+                                <span class="info-label">Status:</span>
+                                <span class="info-value" id="serverStatusValue">Checking...</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Uptime:</span>
+                                <span class="info-value" id="serverUptime">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Version:</span>
+                                <span class="info-value" id="serverVersion">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="system-card">
+                        <h3>System Resources</h3>
+                        <div id="systemResources" class="system-info">
+                            <div class="info-item">
+                                <span class="info-label">Memory:</span>
+                                <span class="info-value" id="systemMemory">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">CPU:</span>
+                                <span class="info-value" id="systemCPU">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Platform:</span>
+                                <span class="info-value" id="systemPlatform">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="system-card">
+                        <h3>Configuration</h3>
+                        <div id="configInfo" class="system-info">
+                            <div class="info-item">
+                                <span class="info-label">Environment:</span>
+                                <span class="info-value" id="configEnv">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Image Quality:</span>
+                                <span class="info-value" id="configQuality">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Max File Size:</span>
+                                <span class="info-value" id="configMaxSize">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="system-card">
+                        <h3>File Management</h3>
+                        <div id="cleanupInfo" class="system-info">
+                            <div class="info-item">
+                                <span class="info-label">Upload Files:</span>
+                                <span class="info-value" id="uploadFileCount">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Total Size:</span>
+                                <span class="info-value" id="uploadTotalSize">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Oldest File:</span>
+                                <span class="info-value" id="uploadOldestFile">-</span>
+                            </div>
+                        </div>
+                        <div class="cleanup-controls">
+                            <button id="runCleanup" class="btn btn-warning btn-small">
+                                <span class="btn-icon">🧹</span>
+                                Cleanup Files
+                            </button>
+                            <button id="refreshCleanup" class="btn btn-outline btn-small">
+                                <span class="btn-icon">🔄</span>
+                                Refresh Stats
+                            </button>
+                        </div>
+                        <div id="cleanupStatus" class="status-message"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Printer Management -->
+            <section class="printer-section">
+                <div class="section-header">
+                    <h2>🖨️ Printer Management</h2>
+                    <p>Manage printers and print queue</p>
+                </div>
+                
+                <div class="printer-grid">
+                    <div class="printer-card">
+                        <h3>Printer Settings</h3>
+                        <div class="printer-info">
+                            <div class="printer-selector">
+                                <label for="printerSelect">Select Printer:</label>
+                                <select id="printerSelect" class="form-select">
+                                    <option value="">Loading printers...</option>
+                                </select>
+                            </div>
+                            <button id="refreshPrinters" class="btn btn-small">
+                                <span class="btn-icon">🔄</span>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="printer-card">
+                        <h3>Print Queue</h3>
+                        <div id="printQueue" class="queue-list">
+                            <span class="queue-empty">No jobs in queue</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Frame Management -->
+            <section class="frame-management-section">
+                <div class="section-header">
+                    <h2>🖼️ Frame Management</h2>
+                    <p>Upload, manage, and organize custom frames</p>
+                </div>
+                
+                <!-- Custom Frame Upload -->
+                <div class="custom-frame-upload">
+                    <h3>📤 Upload Custom Frame</h3>
+                    <p>Upload your own PNG frame (max 10MB). The frame should have transparent areas where photos will be placed.</p>
+                    <div class="upload-controls">
+                        <input type="file" id="frameUpload" accept=".png" style="display: none;">
+                        <button id="selectFrameFile" class="btn btn-outline">
+                            <span class="btn-icon">📁</span>
+                            Select PNG File
+                        </button>
+                        <button id="uploadFrame" class="btn btn-primary" disabled>
+                            <span class="btn-icon">📤</span>
+                            Upload Frame
+                        </button>
+                    </div>
+                    <div id="uploadStatus" class="status-message"></div>
+                </div>
+                
+                <!-- Frame Gallery -->
+                <div class="frame-gallery-section">
+                    <h3>🖼️ Frame Gallery</h3>
+                    <p style="margin-bottom: 20px;">Manage your custom frames. Click on a frame to see details or delete it.</p>
+                    
+                    <div class="frame-gallery-controls">
+                        <div class="search-controls">
+                            <input type="text" id="frameSearch" placeholder="Search frames..." class="form-input">
+                            <button id="clearFrameSearch" class="btn btn-small">Clear</button>
+                        </div>
+                    </div>
+                    
+                    <div class="frame-gallery" id="frameGallery">
+                        <div class="frame-loading" id="frameLoading">
+                            <div class="loading-spinner small"></div>
+                            <span>Loading frames...</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <p id="loadingMessage">Processing...</p>
+            </div>
+        </div>
+
+        <!-- Error Modal -->
+        <div id="errorModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>⚠️ Error</h3>
+                    <button id="closeErrorModal" class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p id="errorMessage"></p>
+                </div>
+                <div class="modal-footer">
+                    <button id="dismissError" class="btn btn-primary">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/system.js"></script>
+</body>
+</html> 

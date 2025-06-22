@@ -1,0 +1,53 @@
+{
+  "name": "vienna-photo-server",
+  "version": "1.0.0",
+  "description": "An automated photo booth system with a beautiful web-based interface that allows users to take photos, apply frames, and print them using a Raspberry Pi.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "start:http": "node server.js",
+    "start:https": "npm run ssl && node server.js",
+    "dev": "nodemon server.js",
+    "server": "node src/server.js",
+    "dev:server": "nodemon src/server.js",
+    "ssl": "node generate-ssl.js",
+    "https": "npm run ssl && npm start",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "echo \"No linter configured\" && exit 0",
+    "clean": "rm -rf uploads/*.jpg uploads/*.jpeg uploads/*.png",
+    "cleanup": "curl -s http://localhost:5000/api/cleanup | jq .",
+    "cleanup-stats": "curl -s http://localhost:5000/api/cleanup/stats | jq .",
+    "setup": "node create-frames.js",
+    "health": "curl -s http://localhost:5000/health | jq .",
+    "frames": "curl -s http://localhost:5000/api/frames | jq .",
+    "printers": "curl -s http://localhost:5000/api/printers | jq .",
+    "system": "curl -s http://localhost:5000/api/system | jq ."
+  },
+  "keywords": [
+    "photo-booth",
+    "raspberry-pi",
+    "express",
+    "sharp",
+    "printing",
+    "camera",
+    "web-interface",
+    "modular",
+    "oop"
+  ],
+  "author": "Vienna Photo Booth Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.0",
+    "multer": "^2.0.0-rc.3",
+    "sharp": "^0.34.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
