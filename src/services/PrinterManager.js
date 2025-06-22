@@ -37,6 +37,33 @@ class PrinterManager {
             return pdfPath;
         } catch (error) {
             console.error('PDF conversion error:', error);
+            
+            // Check if it's a security policy error
+            if (error.message.includes('security policy') || error.message.includes('not allowed')) {
+                const fixMessage = `
+ImageMagick security policy is blocking PDF operations. 
+To fix this, run the following commands on your Raspberry Pi:
+
+1. Find the policy file:
+   sudo find /etc -name "policy.xml" | grep -i imagemagick
+
+2. Edit the policy file (replace PATH with the actual path):
+   sudo nano /etc/ImageMagick-6/policy.xml
+
+3. Find and comment out or remove this line:
+   <policy domain="coder" rights="none" pattern="PDF" />
+
+4. Add this line instead:
+   <policy domain="coder" rights="read|write" pattern="PDF" />
+
+5. Save and restart your application.
+
+Or run the provided fix script: ./fix_imagemagick_policy.sh
+                `;
+                console.error(fixMessage);
+                throw new Error(`ImageMagick security policy blocks PDF operations. ${fixMessage}`);
+            }
+            
             throw new Error(`PDF conversion failed: ${error.message}`);
         }
     }
