@@ -122,7 +122,8 @@ For deploying the Vienna Photo Booth Server on a Raspberry Pi, follow these step
 3. **Install CUPS printing system**
    ```bash
    sudo apt install cups cups-client cups-daemon
-   sudo usermod -a -G lp $USER
+   sudo usermod -a -G lp,lpadmin $USER
+   sudo usermod -a -G lp,lpadmin root
    ```
 
 4. **Install ImageMagick**
