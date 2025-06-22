@@ -19,7 +19,8 @@ class PhotoBooth {
         this.selectedFilter = 'none';
         this.currentPreviewFilter = 'none'; // Track the current filter selected in preview
         this.filterCanvas = null;
-        this.facingMode = 'user'; // 'user' for front camera, 'environment' for back camera
+        this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        this.facingMode = this.isMobile ? 'environment' : 'user'; // 'user' for front camera, 'environment' for back camera
         this.availableCameras = [];
         this.frames = []; // Initialize frames array for one-click functionality
         
@@ -227,11 +228,9 @@ class PhotoBooth {
                                         navigator.mozGetUserMedia || 
                                         navigator.msGetUserMedia);
         
-        // Check if running on mobile device
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
         // Show mobile notice if on mobile and not on HTTPS
-        if (isMobile && location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        if (this.isMobile && location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
             const mobileNotice = document.getElementById('mobileCameraNotice');
             if (mobileNotice) {
                 mobileNotice.style.display = 'block';
@@ -475,8 +474,7 @@ class PhotoBooth {
             this.showLoading('Starting camera...');
             
             // Check if we're on mobile and need HTTPS
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            if (isMobile && location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            if (this.isMobile && location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
                 throw new Error('Camera access requires HTTPS on mobile devices. Please access this app via HTTPS.');
             }
             
@@ -544,8 +542,7 @@ class PhotoBooth {
             this.takePhotoBtn.disabled = false;
             
             // Show switch camera button if multiple cameras are available or on mobile devices
-            const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            if (this.availableCameras.length > 1 || isMobileDevice) {
+            if (this.availableCameras.length > 1 || this.isMobile) {
                 console.log('Showing switch camera button. Available cameras:', this.availableCameras);
                 this.switchCameraBtn.style.display = 'inline-block';
             } else {
@@ -586,10 +583,8 @@ class PhotoBooth {
 
     async detectAvailableCameras() {
         try {
-            // Check if we're on a mobile device
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            
-            if (isMobile) {
+            // Check if we're on a mobile device    
+            if (this.isMobile) {
                 // On mobile devices, assume both front and back cameras are available
                 this.availableCameras = ['user', 'environment'];
                 console.log('Mobile device detected, assuming front and back cameras available');
@@ -602,8 +597,7 @@ class PhotoBooth {
         } catch (error) {
             console.error('Error in camera detection:', error);
             // Fallback: assume multiple cameras on mobile devices
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            if (isMobile) {
+            if (this.isMobile) {
                 this.availableCameras = ['user', 'environment'];
             } else {
                 this.availableCameras = ['user'];
@@ -911,8 +905,7 @@ class PhotoBooth {
         }
         
         // Show switch camera button if multiple cameras are available
-        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        if (this.availableCameras.length > 1 || isMobileDevice) {
+        if (this.availableCameras.length > 1 || this.isMobile) {
             this.switchCameraBtn.style.display = 'inline-block';
         }
         
