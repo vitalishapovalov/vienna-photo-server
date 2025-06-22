@@ -23,18 +23,34 @@ class PrinterManager {
         try {
             const pdfPath = imagePath.replace(/\.[^.]+$/, '.pdf');
             
-            // Use 'convert' command (works on Raspberry Pi OS)
-            const command = `convert "${imagePath}" -page A4 -resize 100% "${pdfPath}"`;
+            // Try 'convert' command first (works on Raspberry Pi OS), fallback to 'magick' (v7)
+            let command = `convert "${imagePath}" -page A4 -resize 100% "${pdfPath}"`;
             
-            const { stdout, stderr } = await this.execAsync(command, {
-                timeout: this.printTimeout
-            });
-            
-            if (stderr && !stderr.includes('warning')) {
-                throw new Error(stderr);
+            try {
+                const { stdout, stderr } = await this.execAsync(command, {
+                    timeout: this.printTimeout
+                });
+                
+                if (stderr && !stderr.includes('warning')) {
+                    throw new Error(stderr);
+                }
+                
+                return pdfPath;
+            } catch (convertError) {
+                // If 'convert' fails, try 'magick' (for newer ImageMagick installations)
+                console.log('convert command failed, trying magick command...');
+                command = `magick "${imagePath}" -page A4 -resize 100% "${pdfPath}"`;
+                
+                const { stdout, stderr } = await this.execAsync(command, {
+                    timeout: this.printTimeout
+                });
+                
+                if (stderr && !stderr.includes('warning')) {
+                    throw new Error(stderr);
+                }
+                
+                return pdfPath;
             }
-            
-            return pdfPath;
         } catch (error) {
             console.error('PDF conversion error:', error);
             

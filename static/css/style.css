@@ -1905,3 +1905,125 @@ main {
         right: 20px;
     }
 }
+
+/* One-Click Photo Section */
+.one-click-section {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.one-click-section .section-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.one-click-section .section-header h2 {
+    color: #667eea;
+    margin-bottom: 10px;
+    font-size: 2rem;
+}
+
+.one-click-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.btn-large {
+    padding: 20px 40px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-radius: 12px;
+    min-width: 300px;
+    transition: all 0.3s ease;
+}
+
+.btn-large:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.one-click-info {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 500px;
+    text-align: left;
+}
+
+.one-click-info p {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.one-click-info ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.one-click-info li {
+    padding: 8px 0;
+    color: #666;
+    position: relative;
+    padding-left: 25px;
+}
+
+.one-click-info li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #28a745;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+/* One-click status messages */
+.one-click-section .status-message {
+    margin-top: 15px;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-weight: 500;
+    text-align: center;
+}
+
+.one-click-section .status-message.info {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border: 1px solid #bbdefb;
+}
+
+.one-click-section .status-message.success {
+    background-color: #e8f5e8;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
+.one-click-section .status-message.error {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdd2;
+}
+
+/* Mobile responsiveness for one-click section */
+@media (max-width: 768px) {
+    .one-click-section {
+        padding: 20px;
+    }
+    
+    .btn-large {
+        min-width: 250px;
+        padding: 16px 32px;
+        font-size: 1.1rem;
+    }
+    
+    .one-click-info {
+        padding: 15px;
+    }
+}

@@ -405,20 +405,20 @@ class Gallery {
         if (this.selectedImages.size === 0) return;
         
         const count = this.selectedImages.size;
-        const message = `Are you sure you want to delete ${count} selected image${count > 1 ? 's' : ''}? This action cannot be undone.`;
+        const message = `Are you sure you want to delete ${count} selected image${count > 1 ? 's' : ''} and their corresponding PDF files? This action cannot be undone.`;
         
         this.showConfirmModal(message, () => this.deleteSelected());
     }
 
     confirmDeleteImage(filename, name) {
-        const message = `Are you sure you want to delete "${name}"? This action cannot be undone.`;
+        const message = `Are you sure you want to delete "${name}" and its corresponding PDF file? This action cannot be undone.`;
         
         this.showConfirmModal(message, () => this.deleteImage(filename));
     }
 
     async deleteSelected() {
         try {
-            this.showLoading('Deleting images...');
+            this.showLoading('Deleting images and PDFs...');
             
             const response = await fetch('/api/gallery/delete', {
                 method: 'DELETE',
@@ -435,7 +435,12 @@ class Gallery {
             if (data.success) {
                 this.selectedImages.clear();
                 await this.loadGallery();
-                this.showSuccess(`Successfully deleted ${data.deletedCount} images`);
+                
+                let message = `Successfully deleted ${data.deletedCount} images`;
+                if (data.deletedPdfCount > 0) {
+                    message += ` and ${data.deletedPdfCount} PDF files`;
+                }
+                this.showSuccess(message);
             } else {
                 throw new Error(data.error || 'Delete failed');
             }
@@ -450,7 +455,7 @@ class Gallery {
 
     async deleteImage(filename) {
         try {
-            this.showLoading('Deleting image...');
+            this.showLoading('Deleting image and PDF...');
             
             const response = await fetch(`/api/gallery/delete/${encodeURIComponent(filename)}`, {
                 method: 'DELETE'
@@ -460,7 +465,7 @@ class Gallery {
             
             if (data.success) {
                 await this.loadGallery();
-                this.showSuccess('Image deleted successfully');
+                this.showSuccess('Image and corresponding PDF deleted successfully');
             } else {
                 throw new Error(data.error || 'Delete failed');
             }

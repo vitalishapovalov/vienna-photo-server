@@ -21,6 +21,7 @@ class PhotoBooth {
         this.filterCanvas = null;
         this.facingMode = 'user'; // 'user' for front camera, 'environment' for back camera
         this.availableCameras = [];
+        this.frames = []; // Initialize frames array for one-click functionality
         
         this.initializeElements();
         this.bindEvents();
@@ -37,6 +38,10 @@ class PhotoBooth {
         this.takePhotoBtn = document.getElementById('takePhoto');
         this.takePhotoAgainBtn = document.getElementById('takePhotoAgain');
         this.cameraSection = document.querySelector('.camera-section');
+        
+        // One-click elements
+        this.oneClickBtn = document.getElementById('oneClickPhoto');
+        this.oneClickStatus = document.getElementById('oneClickStatus');
         
         // Preview elements
         this.photoPreview = document.getElementById('photoPreview');
@@ -128,6 +133,11 @@ class PhotoBooth {
         }
         if (this.downloadOriginalBtn) {
             this.downloadOriginalBtn.addEventListener('click', () => this.downloadOriginalPhoto());
+        }
+        
+        // One-click photo
+        if (this.oneClickBtn) {
+            this.oneClickBtn.addEventListener('click', () => this.oneClickPhoto());
         }
         
         // Printer management
@@ -347,6 +357,9 @@ class PhotoBooth {
             
             const response = await fetch('/api/frames');
             const frames = await response.json();
+            
+            // Store frames in class property for one-click functionality
+            this.frames = frames;
             
             const frameOptions = document.querySelector('.frame-options');
             
@@ -675,10 +688,35 @@ class PhotoBooth {
         }
     }
 
-    takePhoto() {
+    async takePhoto() {
         if (!this.stream) {
             this.showError('Camera not started');
             return;
+        }
+
+        // Check if video is ready and playing
+        if (!this.video.videoWidth || !this.video.videoHeight || this.video.videoWidth === 0 || this.video.videoHeight === 0) {
+            this.showError('Video not ready. Please wait for camera to initialize.');
+            return;
+        }
+
+        // Check if video is actually playing - but be more lenient
+        if (this.video.ended) {
+            this.showError('Video has ended. Please restart camera.');
+            return;
+        }
+        
+        // If video is paused, try to play it
+        if (this.video.paused) {
+            console.log('Video is paused, attempting to play before capture...');
+            try {
+                await this.video.play();
+                // Wait a moment for video to start
+                await new Promise(resolve => setTimeout(resolve, 200));
+            } catch (playError) {
+                console.warn('Failed to play video, but continuing with capture:', playError);
+                // Continue anyway - the video might still have valid data
+            }
         }
 
         try {
@@ -694,15 +732,18 @@ class PhotoBooth {
             
             // Save the original photo without any filters
             this.originalImage = this.canvas.toDataURL('image/jpeg', 0.9);
+            console.log('Original image captured, length:', this.originalImage.length);
             
             // Apply filter to the captured image if a filter is selected
             if (this.selectedFilter && this.selectedFilter !== 'none') {
                 console.log('Selected filter for photo capture:', this.selectedFilter);
                 this.capturedImage = this.applyFilterToCanvas(this.canvas, this.selectedFilter);
+                console.log('Filtered image captured, length:', this.capturedImage.length);
             } else {
                 console.log('No filter selected, capturing normal photo');
                 // Use the original image as the captured image
                 this.capturedImage = this.originalImage;
+                console.log('Using original image as captured image, length:', this.capturedImage.length);
             }
             
             // Show preview
@@ -723,8 +764,12 @@ class PhotoBooth {
             
             this.showSuccess('Photo captured!');
             
+            // Return a promise that resolves when the photo is captured
+            return Promise.resolve();
+            
         } catch (error) {
             this.showError('Failed to take photo: ' + error.message);
+            return Promise.reject(error);
         }
     }
 
@@ -1018,15 +1063,26 @@ class PhotoBooth {
     }
 
     getCurrentFilteredImage() {
-        // Return the current preview image source, which should be the most up-to-date filtered image
-        if (this.photoPreview && this.photoPreview.src) {
+        // First try to get from captured image (most reliable)
+        if (this.capturedImage) {
+            console.log('Getting current filtered image from capturedImage');
+            return this.capturedImage;
+        }
+        
+        // Fallback to preview image source
+        if (this.photoPreview && this.photoPreview.src && this.photoPreview.src !== 'data:,' && !this.photoPreview.src.includes('undefined')) {
             console.log('Getting current filtered image from preview');
             return this.photoPreview.src;
         }
         
-        // Fallback to captured image if preview is not available
-        console.log('Falling back to captured image');
-        return this.capturedImage;
+        // Last resort - original image
+        if (this.originalImage) {
+            console.log('Getting current filtered image from originalImage (fallback)');
+            return this.originalImage;
+        }
+        
+        console.error('No image data available for printing');
+        return null;
     }
 
     applyFilterToVideo() {
@@ -1096,6 +1152,7 @@ class PhotoBooth {
 
     showCameraSection() {
         this.hideSection('frame-section');
+        this.hideSection('one-click-section');
         this.showSection('camera-section');
         
         // Check if we have a captured image (returning from preview)
@@ -1546,7 +1603,7 @@ class PhotoBooth {
 
     showSection(sectionName) {
         // Hide all sections first
-        const sections = ['frame-section', 'camera-section', 'preview-section', 'print-section'];
+        const sections = ['frame-section', 'camera-section', 'preview-section', 'print-section', 'one-click-section'];
         sections.forEach(section => {
             const element = document.querySelector(`.${section}`);
             if (element) {
@@ -1573,11 +1630,13 @@ class PhotoBooth {
     }
 
     showPreviewAndPrintSections() {
-        // Hide frame and camera sections
+        // Hide frame, camera, and one-click sections
         const frameSection = document.querySelector('.frame-section');
         const cameraSection = document.querySelector('.camera-section');
+        const oneClickSection = document.querySelector('.one-click-section');
         if (frameSection) frameSection.style.display = 'none';
         if (cameraSection) cameraSection.style.display = 'none';
+        if (oneClickSection) oneClickSection.style.display = 'none';
         
         // Show preview and print sections
         const previewSection = document.querySelector('.preview-section');
@@ -1626,7 +1685,21 @@ class PhotoBooth {
     }
 
     showFrameSection() {
-        this.showSection('frame-section');
+        // Hide all sections first
+        const sections = ['camera-section', 'preview-section', 'print-section'];
+        sections.forEach(section => {
+            const element = document.querySelector(`.${section}`);
+            if (element) {
+                element.style.display = 'none';
+            }
+        });
+        
+        // Show both frame section and one-click section
+        const frameSection = document.querySelector('.frame-section');
+        const oneClickSection = document.querySelector('.one-click-section');
+        if (frameSection) frameSection.style.display = 'block';
+        if (oneClickSection) oneClickSection.style.display = 'block';
+        
         // Reset camera UI when going back to frame selection
         if (this.startCameraBtn) {
             this.startCameraBtn.style.display = 'inline-block';
@@ -1669,6 +1742,149 @@ class PhotoBooth {
             this.canvas.height = this.video.videoHeight;
         }
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
+    async oneClickPhoto() {
+        try {
+            // Disable the button to prevent multiple clicks
+            this.oneClickBtn.disabled = true;
+            this.oneClickBtn.innerHTML = '<span class="btn-icon">⏳</span>Processing...';
+            
+            // Update status
+            this.updateOneClickStatus('Starting one-click photo process...', 'info');
+            
+            // Step 1: Load frames if not already loaded
+            if (!this.frames || this.frames.length === 0) {
+                this.updateOneClickStatus('Loading frames...', 'info');
+                await this.loadFrames();
+            }
+            
+            // Step 2: Select the second frame (index 1)
+            if (this.frames.length < 2) {
+                throw new Error('At least 2 frames are required for one-click photo');
+            }
+            
+            const secondFrame = this.frames[1];
+            this.updateOneClickStatus(`Selected frame: ${secondFrame.name}`, 'info');
+            
+            // Step 3: Select the frame
+            await this.selectFrame(secondFrame.id);
+            
+            // Step 4: Set black & white filter
+            this.selectFilter('blackwhite');
+            this.updateOneClickStatus('Applied black & white filter', 'info');
+            
+            // Step 5: Start camera
+            this.updateOneClickStatus('Starting camera...', 'info');
+            await this.startCamera();
+            
+            // Step 6: Wait 3 seconds for camera to stabilize
+            this.updateOneClickStatus('Camera ready, taking photo in 3 seconds...', 'info');
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // Step 6.5: Additional check to ensure video is ready
+            this.updateOneClickStatus('Checking video readiness...', 'info');
+            let attempts = 0;
+            const maxAttempts = 20; // Increased from 10 to 20 attempts
+            
+            while (attempts < maxAttempts) {
+                // More lenient check - just ensure video has dimensions and is not ended
+                if (this.video && 
+                    this.video.videoWidth > 0 && 
+                    this.video.videoHeight > 0 && 
+                    !this.video.ended &&
+                    this.stream && 
+                    this.stream.active) {
+                    
+                    // Additional check: ensure video is playing
+                    if (this.video.paused) {
+                        console.log('Video is paused, attempting to play...');
+                        try {
+                            await this.video.play();
+                            // Wait a bit for video to start playing
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                        } catch (playError) {
+                            console.warn('Failed to play video:', playError);
+                        }
+                    }
+                    
+                    // Final check: ensure video is now playing
+                    if (!this.video.paused && !this.video.ended) {
+                        this.updateOneClickStatus('Video is ready!', 'info');
+                        break;
+                    }
+                }
+                
+                this.updateOneClickStatus(`Waiting for video to be ready... (${attempts + 1}/${maxAttempts})`, 'info');
+                await new Promise(resolve => setTimeout(resolve, 750)); // Increased from 500ms to 750ms
+                attempts++;
+            }
+            
+            if (attempts >= maxAttempts) {
+                // Instead of throwing an error, try to take the photo anyway
+                this.updateOneClickStatus('Video may not be fully ready, attempting to take photo...', 'info');
+                console.warn('Video readiness check timed out, but attempting to take photo anyway');
+            }
+            
+            // Step 7: Take photo
+            this.updateOneClickStatus('Taking photo...', 'info');
+            await this.takePhoto();
+            
+            // Step 7.5: Verify photo was captured
+            this.updateOneClickStatus('Verifying photo capture...', 'info');
+            if (!this.capturedImage) {
+                throw new Error('Photo capture failed - no image data available');
+            }
+            console.log('Photo captured successfully, capturedImage length:', this.capturedImage.length);
+            
+            // Step 8: Wait for photo processing
+            this.updateOneClickStatus('Processing photo...', 'info');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Step 9: Print the photo
+            this.updateOneClickStatus('Printing photo...', 'info');
+            await this.printPhoto();
+            
+            // Step 10: Wait for print job to be sent
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Step 11: Return to main page (frame selection)
+            this.updateOneClickStatus('Photo printed! Returning to Photo Booth...', 'success');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Reset everything and show frame section
+            this.resetOneClickProcess();
+            this.showFrameSection();
+            
+        } catch (error) {
+            console.error('One-click photo failed:', error);
+            this.updateOneClickStatus(`Error: ${error.message}`, 'error');
+            this.resetOneClickProcess();
+        }
+    }
+    
+    updateOneClickStatus(message, type = 'info') {
+        if (this.oneClickStatus) {
+            this.oneClickStatus.textContent = message;
+            this.oneClickStatus.className = `status-message ${type}`;
+        }
+        console.log(`One-click status: ${message}`);
+    }
+    
+    resetOneClickProcess() {
+        // Re-enable the button
+        if (this.oneClickBtn) {
+            this.oneClickBtn.disabled = false;
+            this.oneClickBtn.innerHTML = '<span class="btn-icon">⚡</span>One-Click Photo & Print';
+        }
+        
+        // Clear status after a delay
+        setTimeout(() => {
+            if (this.oneClickStatus) {
+                this.oneClickStatus.textContent = '';
+                this.oneClickStatus.className = 'status-message';
+            }
+        }, 3000);
     }
 }
 

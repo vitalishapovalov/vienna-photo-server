@@ -98,12 +98,25 @@ class GalleryController {
                 });
             }
             
-            // Delete file
+            // Delete the image file
             await fs.unlink(filePath);
+            
+            // Also delete the corresponding PDF file if it exists
+            const pdfFilename = filename.replace(/\.[^.]+$/, '.pdf');
+            const pdfPath = path.join(this.uploadsPath, pdfFilename);
+            
+            try {
+                await fs.access(pdfPath);
+                await fs.unlink(pdfPath);
+                console.log(`Deleted PDF file: ${pdfFilename}`);
+            } catch (error) {
+                // PDF file doesn't exist, which is fine
+                console.log(`No PDF file found for: ${filename}`);
+            }
             
             res.json({
                 success: true,
-                message: 'Image deleted successfully'
+                message: 'Image and corresponding PDF deleted successfully'
             });
             
         } catch (error) {
@@ -130,6 +143,7 @@ class GalleryController {
             }
             
             let deletedCount = 0;
+            let deletedPdfCount = 0;
             const errors = [];
             
             // Delete each file
@@ -145,6 +159,20 @@ class GalleryController {
                     await fs.unlink(filePath);
                     deletedCount++;
                     
+                    // Also delete the corresponding PDF file if it exists
+                    const pdfFilename = filename.replace(/\.[^.]+$/, '.pdf');
+                    const pdfPath = path.join(this.uploadsPath, pdfFilename);
+                    
+                    try {
+                        await fs.access(pdfPath);
+                        await fs.unlink(pdfPath);
+                        deletedPdfCount++;
+                        console.log(`Deleted PDF file: ${pdfFilename}`);
+                    } catch (error) {
+                        // PDF file doesn't exist, which is fine
+                        console.log(`No PDF file found for: ${filename}`);
+                    }
+                    
                 } catch (error) {
                     if (error.code === 'ENOENT') {
                         errors.push(`File not found: ${filename}`);
@@ -157,6 +185,7 @@ class GalleryController {
             res.json({
                 success: true,
                 deletedCount: deletedCount,
+                deletedPdfCount: deletedPdfCount,
                 totalRequested: filenames.length,
                 errors: errors.length > 0 ? errors : undefined
             });
