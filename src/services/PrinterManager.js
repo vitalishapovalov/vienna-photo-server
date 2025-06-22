@@ -23,17 +23,42 @@ class PrinterManager {
         try {
             const pdfPath = imagePath.replace(/\.[^.]+$/, '.pdf');
             
-            // Use ImageMagick to convert image to PDF with full page coverage
-            // -page A4 sets the page size to A4
-            // -resize 100% ensures the image covers the full page
-            const command = `magick "${imagePath}" -page A4 -resize 100% "${pdfPath}"`;
+            // Try different ImageMagick command names available on Raspberry Pi OS
+            let command = '';
+            let success = false;
             
-            const { stdout, stderr } = await this.execAsync(command, {
-                timeout: this.printTimeout
-            });
+            // Try 'convert' first (most common on Raspberry Pi)
+            try {
+                command = `convert "${imagePath}" -page A4 -resize 100% "${pdfPath}"`;
+                await this.execAsync(command, { timeout: this.printTimeout });
+                success = true;
+                console.log('Used "convert" command successfully');
+            } catch (error) {
+                console.log('"convert" command failed, trying "magick"...');
+                
+                // Try 'magick' command
+                try {
+                    command = `magick "${imagePath}" -page A4 -resize 100% "${pdfPath}"`;
+                    await this.execAsync(command, { timeout: this.printTimeout });
+                    success = true;
+                    console.log('Used "magick" command successfully');
+                } catch (error2) {
+                    console.log('"magick" command failed, trying "imagemagick"...');
+                    
+                    // Try 'imagemagick' command
+                    try {
+                        command = `imagemagick "${imagePath}" -page A4 -resize 100% "${pdfPath}"`;
+                        await this.execAsync(command, { timeout: this.printTimeout });
+                        success = true;
+                        console.log('Used "imagemagick" command successfully');
+                    } catch (error3) {
+                        throw new Error(`All ImageMagick commands failed. Tried: convert, magick, imagemagick. Last error: ${error3.message}`);
+                    }
+                }
+            }
             
-            if (stderr && !stderr.includes('warning')) {
-                throw new Error(stderr);
+            if (!success) {
+                throw new Error('ImageMagick conversion failed');
             }
             
             return pdfPath;
