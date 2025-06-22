@@ -82,9 +82,11 @@ Or run the provided fix script: ./fix_imagemagick_policy.sh
             // Always convert image to PDF for all printers
             console.log('Converting image to PDF for printing...');
             const pdfPath = await this.convertImageToPDF(imagePath);
+            console.log('Converted successfully');
             
             const command = `lp -d ${printer} "${pdfPath}"`;
-            
+            console.log(`Starting print with command: ${command}`);
+
             const { stdout, stderr } = await this.execAsync(command, {
                 timeout: this.printTimeout
             });
@@ -92,6 +94,8 @@ Or run the provided fix script: ./fix_imagemagick_policy.sh
             if (stderr && !stderr.includes('request id is')) {
                 throw new Error(stderr);
             }
+
+            console.log(`Printed successfully, result: ${stdout}`);
             
             // Don't clean up PDF file - keep it for gallery download
             console.log(`PDF saved at: ${pdfPath}`);
