@@ -5,6 +5,8 @@
 
 const { exec } = require('child_process');
 const util = require('util');
+const path = require('path');
+const fs = require('fs');
 const config = require('../config/config');
 
 class PrinterManager {
@@ -12,6 +14,33 @@ class PrinterManager {
         this.defaultPrinter = config.defaultPrinter;
         this.printTimeout = config.printTimeout;
         this.execAsync = util.promisify(exec);
+    }
+
+    /**
+     * Convert image to PDF using ImageMagick
+     */
+    async convertImageToPDF(imagePath) {
+        try {
+            const pdfPath = imagePath.replace(/\.[^.]+$/, '.pdf');
+            
+            // Use ImageMagick to convert image to PDF with full page coverage
+            // -page A4 sets the page size to A4
+            // -resize 100% ensures the image covers the full page
+            const command = `magick "${imagePath}" -page A4 -resize 100% "${pdfPath}"`;
+            
+            const { stdout, stderr } = await this.execAsync(command, {
+                timeout: this.printTimeout
+            });
+            
+            if (stderr && !stderr.includes('warning')) {
+                throw new Error(stderr);
+            }
+            
+            return pdfPath;
+        } catch (error) {
+            console.error('PDF conversion error:', error);
+            throw new Error(`PDF conversion failed: ${error.message}`);
+        }
     }
 
     /**
@@ -25,7 +54,11 @@ class PrinterManager {
                 printer = await this.getDefaultPrinter();
             }
             
-            const command = `lp -d ${printer} "${imagePath}"`;
+            // Always convert image to PDF for all printers
+            console.log('Converting image to PDF for printing...');
+            const pdfPath = await this.convertImageToPDF(imagePath);
+            
+            const command = `lp -d ${printer} "${pdfPath}"`;
             
             const { stdout, stderr } = await this.execAsync(command, {
                 timeout: this.printTimeout
@@ -35,11 +68,15 @@ class PrinterManager {
                 throw new Error(stderr);
             }
             
+            // Don't clean up PDF file - keep it for gallery download
+            console.log(`PDF saved at: ${pdfPath}`);
+            
             return {
                 success: true,
                 printJob: stdout.trim(),
                 printer: printer,
                 imagePath: imagePath,
+                pdfPath: pdfPath,
                 timestamp: new Date().toISOString()
             };
         } catch (error) {

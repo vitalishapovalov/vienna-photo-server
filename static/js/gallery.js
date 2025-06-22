@@ -219,6 +219,25 @@ class Gallery {
             imageContainer.classList.add('selected');
         }
         
+        // Create action buttons HTML
+        let actionButtons = `
+            <button class="btn btn-small btn-outline download-single" title="Download Image">
+                <span class="btn-icon">📥</span>
+            </button>`;
+        
+        // Add PDF download button if PDF exists
+        if (image.pdfExists) {
+            actionButtons += `
+                <button class="btn btn-small btn-outline download-pdf" title="Download PDF">
+                    <span class="btn-icon">📄</span>
+                </button>`;
+        }
+        
+        actionButtons += `
+            <button class="btn btn-small btn-danger delete-single" title="Delete">
+                <span class="btn-icon">🗑️</span>
+            </button>`;
+        
         imageContainer.innerHTML = `
             <div class="image-preview">
                 <img src="/uploads/${image.filename}" alt="${image.name}" loading="lazy">
@@ -227,14 +246,10 @@ class Gallery {
                         <span class="image-name">${image.name}</span>
                         <span class="image-size">${this.formatBytes(image.size)}</span>
                         <span class="image-date">${this.formatDate(image.created)}</span>
+                        ${image.pdfExists ? `<span class="pdf-indicator">📄 PDF Available</span>` : ''}
                     </div>
                     <div class="image-actions">
-                        <button class="btn btn-small btn-outline download-single" title="Download">
-                            <span class="btn-icon">📥</span>
-                        </button>
-                        <button class="btn btn-small btn-danger delete-single" title="Delete">
-                            <span class="btn-icon">🗑️</span>
-                        </button>
+                        ${actionButtons}
                     </div>
                 </div>
                 <div class="selection-indicator">
@@ -256,6 +271,15 @@ class Gallery {
             downloadBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.downloadImage(image.filename);
+            });
+        }
+        
+        // Add PDF download button event
+        const downloadPdfBtn = imageContainer.querySelector('.download-pdf');
+        if (downloadPdfBtn) {
+            downloadPdfBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.downloadPDF(image.filename);
             });
         }
         
@@ -350,6 +374,30 @@ class Gallery {
         } catch (error) {
             console.error('Download failed:', error);
             this.showError('Download failed: ' + error.message);
+        }
+    }
+
+    async downloadPDF(filename) {
+        try {
+            const response = await fetch(`/api/gallery/pdf/${encodeURIComponent(filename)}`);
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename.replace(/\.[^.]+$/, '.pdf');
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                this.showSuccess('PDF downloaded successfully!');
+            } else {
+                throw new Error('PDF download failed');
+            }
+        } catch (error) {
+            console.error('PDF download failed:', error);
+            this.showError('PDF download failed: ' + error.message);
         }
     }
 

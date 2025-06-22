@@ -61,14 +61,21 @@ class PhotoController {
             const outputPath = path.join(config.uploadPath, filename);
             await this.imageProcessor.saveImage(processedPhoto, outputPath);
 
-            // Print image
+            // Print image (this will also create PDF)
             try {
                 const printResult = await this.printerManager.printImage(outputPath);
+                
+                // Get PDF filename (same as image but with .pdf extension)
+                const pdfFilename = filename.replace(/\.[^.]+$/, '.pdf');
+                const pdfPath = path.join(config.uploadPath, pdfFilename);
+                
                 return {
                     success: true,
                     message: 'Photo printed successfully!',
                     file: outputPath,
                     filename: filename,
+                    pdfFile: printResult.pdfPath,
+                    pdfFilename: pdfFilename,
                     printJob: printResult.printJob,
                     printer: printResult.printer,
                     timestamp: new Date().toISOString()

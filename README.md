@@ -96,6 +96,98 @@ A modern, modular photo booth application built with Node.js, featuring real-tim
    - Allow camera access when prompted
    - Upload custom frames and start taking photos!
 
+## 🍓 Raspberry Pi Deployment
+
+For deploying the Vienna Photo Booth Server on a Raspberry Pi, follow these steps:
+
+### Prerequisites
+- Raspberry Pi (3 or 4 recommended)
+- Raspberry Pi OS (latest version)
+- Internet connection
+
+### Installation Steps
+
+1. **Update system packages**
+   ```bash
+   sudo apt update
+   sudo apt upgrade -y
+   ```
+
+2. **Install Node.js 22.x**
+   ```bash
+   curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+   sudo apt-get install -y nodejs
+   ```
+
+3. **Install CUPS printing system**
+   ```bash
+   sudo apt install cups cups-client cups-daemon
+   sudo usermod -a -G lp $USER
+   ```
+
+4. **Clone and setup the application**
+   ```bash
+   git clone https://github.com/vitalishapovalov/vienna-photo-server
+   cd vienna-photo-server
+   npm install
+   ```
+
+5. **Generate SSL certificates**
+   ```bash
+   npm run ssl
+   ```
+
+6. **Install PM2 for process management**
+   ```bash
+   sudo npm install -g pm2
+   ```
+
+7. **Start the application with PM2**
+   ```bash
+   sudo pm2 start npm --name "vienna-photo-server" -- start
+   sudo pm2 startup
+   sudo pm2 save
+   ```
+
+### Accessing the Application
+
+After installation, you can access the Vienna Photo Booth Server at:
+- **HTTPS**: `https://YOUR_RASPBERRY_PI_IP:5000`
+- **HTTP**: `http://YOUR_RASPBERRY_PI_IP:5000`
+
+### PM2 Management Commands
+
+```bash
+# View application status
+sudo pm2 status
+
+# View logs
+sudo pm2 logs vienna-photo-server
+
+# Restart application
+sudo pm2 restart vienna-photo-server
+
+# Stop application
+sudo pm2 stop vienna-photo-server
+
+# Delete application from PM2
+sudo pm2 delete vienna-photo-server
+```
+
+### Printer Setup on Raspberry Pi
+
+1. **Access CUPS web interface**
+   - Open browser and go to: `http://YOUR_RASPBERRY_PI_IP:631`
+   - Login with your Raspberry Pi credentials
+
+2. **Add printer**
+   - Click "Administration" tab
+   - Click "Add Printer"
+   - Follow the setup wizard for your specific printer
+
+3. **Test printing**
+   - Use the Vienna Photo Booth Server to test print functionality
+
 ## 📱 Mobile Camera Access
 
 **Important**: Mobile browsers require HTTPS for camera access. For development:
@@ -295,97 +387,6 @@ CLEANUP_INTERVAL=3600000    # Cleanup interval (1 hour)
 MAX_FILE_AGE=86400000       # Max file age (24 hours)
 MAX_UPLOADS_SIZE=104857600  # Max uploads size (100MB)
 ```
-
-## 🍓 Raspberry Pi Setup
-
-### System Requirements
-- Raspberry Pi 4 (recommended) or Pi 3B+
-- 4GB+ RAM
-- 16GB+ SD card
-- USB camera or Pi Camera Module
-- CUPS-compatible printer
-
-### Installation Steps
-
-1. **Update System**
-   ```bash
-   sudo apt update && sudo apt upgrade -y
-   ```
-
-2. **Install Node.js**
-   ```bash
-   curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-   sudo apt-get install -y nodejs
-   ```
-
-3. **Install CUPS and Printer Support**
-   ```bash
-   sudo apt install cups cups-client cups-daemon
-   sudo usermod -a -G lp $USER
-   ```
-
-4. **Install Camera Support**
-   ```bash
-   # For USB cameras
-   sudo apt install fswebcam
-   
-   # For Pi Camera Module
-   sudo apt install python3-picamera
-   ```
-
-5. **Clone and Setup Project**
-   ```bash
-   git clone <repository-url>
-   cd vienna-photo-server
-   npm install
-   ```
-
-6. **Generate SSL Certificates**
-   ```bash
-   npm run ssl
-   ```
-
-7. **Start the Server**
-   ```bash
-   npm run https
-   ```
-
-### Pi Camera Module Setup
-
-If using Pi Camera Module:
-
-1. **Enable Camera**
-   ```bash
-   sudo raspi-config
-   # Navigate to Interface Options → Camera → Enable
-   ```
-
-2. **Test Camera**
-   ```bash
-   vcgencmd get_camera
-   # Should return: supported=1 detected=1
-   ```
-
-### Network Access
-
-1. **Find Pi IP Address**
-   ```bash
-   hostname -I
-   ```
-
-2. **Access from Other Devices**
-   - On mobile/computer: `https://PI_IP_ADDRESS:5000`
-   - Accept SSL certificate warning
-   - Allow camera permissions
-
-## 🔒 Security Features
-
-- **HTTPS Support**: SSL/TLS encryption for secure connections
-- **Input Validation**: Comprehensive input sanitization
-- **File Type Validation**: Secure file upload handling
-- **Path Traversal Protection**: Prevents directory traversal attacks
-- **CORS Configuration**: Controlled cross-origin requests
-- **Helmet Security**: Security headers and middleware
 
 ## 🛠️ Development
 

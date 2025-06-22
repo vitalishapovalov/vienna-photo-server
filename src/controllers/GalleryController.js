@@ -184,13 +184,30 @@ class GalleryController {
                         const filePath = path.join(this.uploadsPath, file);
                         const stats = await fs.stat(filePath);
                         
+                        // Check if PDF version exists
+                        const pdfFilename = file.replace(/\.[^.]+$/, '.pdf');
+                        const pdfPath = path.join(this.uploadsPath, pdfFilename);
+                        let pdfExists = false;
+                        let pdfStats = null;
+                        
+                        try {
+                            pdfStats = await fs.stat(pdfPath);
+                            pdfExists = true;
+                        } catch (error) {
+                            // PDF doesn't exist
+                        }
+                        
                         images.push({
                             filename: file,
                             name: this.getDisplayName(file),
                             size: stats.size,
                             created: stats.birthtime,
                             modified: stats.mtime,
-                            path: `/uploads/${file}`
+                            path: `/uploads/${file}`,
+                            pdfExists: pdfExists,
+                            pdfFilename: pdfExists ? pdfFilename : null,
+                            pdfPath: pdfExists ? `/uploads/${pdfFilename}` : null,
+                            pdfSize: pdfExists ? pdfStats.size : null
                         });
                     } catch (error) {
                         console.warn(`Error reading file ${file}:`, error);
@@ -199,9 +216,7 @@ class GalleryController {
             }
             
             // Sort by creation date (newest first)
-            images.sort((a, b) => new Date(b.created) - new Date(a.created));
-            
-            return images;
+            return images.sort((a, b) => b.created - a.created);
         } catch (error) {
             console.error('Error scanning images:', error);
             return [];
@@ -248,6 +263,45 @@ class GalleryController {
             res.status(500).json({
                 success: false,
                 error: 'Failed to get gallery statistics'
+            });
+        }
+    }
+
+    /**
+     * Download PDF file
+     */
+    async downloadPDF(req, res) {
+        try {
+            const filename = req.params.filename;
+            const pdfFilename = filename.replace(/\.[^.]+$/, '.pdf');
+            const filePath = path.join(this.uploadsPath, pdfFilename);
+            
+            // Validate filename
+            if (!this.isValidImageFile(filename)) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid file format'
+                });
+            }
+            
+            // Check if PDF exists
+            try {
+                await fs.access(filePath);
+            } catch (error) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'PDF file not found'
+                });
+            }
+            
+            // Send PDF file
+            res.download(filePath, pdfFilename);
+            
+        } catch (error) {
+            console.error('Error downloading PDF:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to download PDF'
             });
         }
     }

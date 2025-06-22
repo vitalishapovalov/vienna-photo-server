@@ -315,6 +315,9 @@ class RouteManager {
         // Download image
         router.get('/gallery/download/:filename', this.galleryController.downloadImage.bind(this.galleryController));
 
+        // Download PDF
+        router.get('/gallery/pdf/:filename', this.galleryController.downloadPDF.bind(this.galleryController));
+
         // Delete image
         router.delete('/gallery/delete/:filename', this.galleryController.deleteImage.bind(this.galleryController));
 
