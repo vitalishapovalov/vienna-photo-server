@@ -125,24 +125,49 @@ For deploying the Vienna Photo Booth Server on a Raspberry Pi, follow these step
    sudo usermod -a -G lp $USER
    ```
 
-4. **Clone and setup the application**
+4. **Install ImageMagick**
+   ```bash
+   sudo apt install imagemagick
+   ```
+
+5. **Fix ImageMagick security policy (Important!)**
+   
+   ImageMagick has a security policy that blocks PDF operations by default. You must fix this for PDF printing to work:
+   
+   ```bash
+   # Find the policy file
+   sudo find /etc -name "policy.xml" | grep -i imagemagick
+   
+   # Edit the policy file (replace PATH with the actual path found above)
+   sudo nano /etc/ImageMagick-6/policy.xml
+   
+   # Find and comment out this line:
+   # <policy domain="coder" rights="none" pattern="PDF" />
+   
+   # Add this line instead:
+   # <policy domain="coder" rights="read|write" pattern="PDF" />
+   
+   # Save the file (Ctrl+X, then Y, then Enter)
+   ```
+
+6. **Clone and setup the application**
    ```bash
    git clone https://github.com/vitalishapovalov/vienna-photo-server
    cd vienna-photo-server
    npm install
    ```
 
-5. **Generate SSL certificates**
+7. **Generate SSL certificates**
    ```bash
    npm run ssl
    ```
 
-6. **Install PM2 for process management**
+8. **Install PM2 for process management**
    ```bash
    sudo npm install -g pm2
    ```
 
-7. **Start the application with PM2**
+9. **Start the application with PM2**
    ```bash
    sudo pm2 start npm --name "vienna-photo-server" -- start
    sudo pm2 startup
@@ -187,6 +212,27 @@ sudo pm2 delete vienna-photo-server
 
 3. **Test printing**
    - Use the Vienna Photo Booth Server to test print functionality
+
+### Troubleshooting
+
+#### ImageMagick Security Policy Error
+If you see this error when printing:
+```
+convert-im6.q16: attempt to perform an operation not allowed by the security policy `PDF'
+```
+
+**Solution**: Follow step 5 in the installation process to fix the ImageMagick security policy.
+
+#### PDF Conversion Issues
+- Ensure ImageMagick is installed: `sudo apt install imagemagick`
+- Verify the security policy fix was applied correctly
+- Check that the `convert` command works: `convert -version`
+- Restart the application after making policy changes
+
+#### Printer Not Found
+- Check CUPS status: `sudo systemctl status cups`
+- Verify printer is connected and powered on
+- Check CUPS web interface at `http://YOUR_RASPBERRY_PI_IP:631`
 
 ## 📱 Mobile Camera Access
 
