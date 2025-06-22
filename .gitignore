@@ -4,4 +4,4 @@ yarn-debug.log*
 yarn-error.log*
 package-lock.json
 ssl/
-.DS_Store/
+.DS_Store
