@@ -17,6 +17,7 @@ class PhotoBooth {
         this.systemInfo = null;
         this.isProcessing = false;
         this.selectedFilter = 'none';
+        this.currentPreviewFilter = 'none'; // Track the current filter selected in preview
         this.filterCanvas = null;
         this.facingMode = 'user'; // 'user' for front camera, 'environment' for back camera
         this.availableCameras = [];
@@ -78,6 +79,7 @@ class PhotoBooth {
         
         // Filter elements
         this.filterButtons = document.querySelectorAll('.filter-btn');
+        this.previewFilterButtons = document.querySelectorAll('.preview-filter-btn');
         this.filterCanvas = document.createElement('canvas');
         this.filterCtx = this.filterCanvas.getContext('2d');
         
@@ -166,6 +168,14 @@ class PhotoBooth {
             button.addEventListener('click', () => {
                 const filterType = button.getAttribute('data-filter');
                 this.selectFilter(filterType);
+            });
+        });
+        
+        // Preview filter buttons
+        this.previewFilterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const filterType = button.getAttribute('data-filter');
+                this.selectPreviewFilter(filterType);
             });
         });
     }
@@ -818,6 +828,20 @@ class PhotoBooth {
         this.capturedImage = null;
         this.originalImage = null;
         
+        // Reset preview filter state when starting over
+        this.currentPreviewFilter = 'none';
+        
+        // Reset preview filter buttons
+        this.previewFilterButtons.forEach(button => {
+            button.classList.remove('active');
+        });
+        
+        // Set the active preview filter to match the camera filter
+        const activePreviewButton = document.querySelector(`.preview-filter-btn[data-filter="${this.selectedFilter}"]`);
+        if (activePreviewButton) {
+            activePreviewButton.classList.add('active');
+        }
+        
         // Adjust camera canvas to frame dimensions if frame is selected
         if (this.selectedFrame) {
             await this.adjustCameraToFrame(this.selectedFrame);
@@ -901,6 +925,108 @@ class PhotoBooth {
         if (this.stream && this.video) {
             this.applyFilterToVideo();
         }
+    }
+
+    selectPreviewFilter(filterType) {
+        console.log('selectPreviewFilter called with:', filterType);
+        
+        if (!this.originalImage) {
+            console.warn('No original image available for filter preview');
+            return;
+        }
+        
+        // Remove active class from all preview filter buttons
+        this.previewFilterButtons.forEach(button => {
+            button.classList.remove('active');
+        });
+        
+        // Add active class to selected preview filter button
+        const selectedButton = document.querySelector(`.preview-filter-btn[data-filter="${filterType}"]`);
+        if (selectedButton) {
+            selectedButton.classList.add('active');
+        }
+        
+        // Track the current preview filter
+        this.currentPreviewFilter = filterType;
+        console.log('Current preview filter set to:', this.currentPreviewFilter);
+        
+        // Apply the selected filter to the preview
+        this.applyPreviewFilter(filterType);
+    }
+
+    applyPreviewFilter(filterType) {
+        if (!this.originalImage || !this.photoPreview) {
+            console.warn('Cannot apply preview filter: missing original image or preview element');
+            return;
+        }
+        
+        try {
+            // Create a temporary canvas to apply the filter
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Create an image element to load the original image
+            const img = new Image();
+            img.onload = () => {
+                // Set canvas dimensions to match the image
+                tempCanvas.width = img.width;
+                tempCanvas.height = img.height;
+                
+                // Draw the original image
+                tempCtx.drawImage(img, 0, 0);
+                
+                // Apply filter if not 'none'
+                if (filterType && filterType !== 'none') {
+                    // Get image data for pixel manipulation
+                    const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                    const data = imageData.data;
+                    
+                    // Apply filter based on type
+                    switch (filterType) {
+                        case 'blackwhite':
+                            this.applyBlackWhiteFilter(data);
+                            break;
+                        case 'sepia':
+                            this.applySepiaFilter(data);
+                            break;
+                        case 'oldcamera':
+                            this.applyOldCameraFilter(data);
+                            break;
+                        default:
+                            console.log('Unknown filter type:', filterType);
+                    }
+                    
+                    // Put the filtered image data back
+                    tempCtx.putImageData(imageData, 0, 0);
+                }
+                
+                // Update the preview image
+                this.photoPreview.src = tempCanvas.toDataURL('image/jpeg', 0.9);
+                
+                // Update the captured image to reflect the new filter
+                this.capturedImage = tempCanvas.toDataURL('image/jpeg', 0.9);
+                
+                console.log('Preview filter applied:', filterType, 'capturedImage updated');
+            };
+            
+            img.src = this.originalImage;
+            
+        } catch (error) {
+            console.error('Failed to apply preview filter:', error);
+            this.showError('Failed to apply filter: ' + error.message);
+        }
+    }
+
+    getCurrentFilteredImage() {
+        // Return the current preview image source, which should be the most up-to-date filtered image
+        if (this.photoPreview && this.photoPreview.src) {
+            console.log('Getting current filtered image from preview');
+            return this.photoPreview.src;
+        }
+        
+        // Fallback to captured image if preview is not available
+        console.log('Falling back to captured image');
+        return this.capturedImage;
     }
 
     applyFilterToVideo() {
@@ -1133,7 +1259,8 @@ class PhotoBooth {
     }
 
     async printPhoto() {
-        if (!this.capturedImage) {
+        const currentImage = this.getCurrentFilteredImage();
+        if (!currentImage) {
             this.showError('No photo to print');
             return;
         }
@@ -1149,9 +1276,11 @@ class PhotoBooth {
             
             // Prepare data for printing
             const printData = {
-                image: this.capturedImage,
+                image: currentImage,
                 frame_id: this.selectedFrame
             };
+            
+            console.log('Printing with current filtered image');
             
             // Send to server
             const response = await fetch('/api/print', {
@@ -1184,7 +1313,8 @@ class PhotoBooth {
     }
 
     async processOnly() {
-        if (!this.capturedImage) {
+        const currentImage = this.getCurrentFilteredImage();
+        if (!currentImage) {
             this.showError('No photo to process');
             return;
         }
@@ -1200,9 +1330,11 @@ class PhotoBooth {
             
             // Prepare data for processing
             const processData = {
-                image: this.capturedImage,
+                image: currentImage,
                 frame_id: this.selectedFrame
             };
+            
+            console.log('Processing with current filtered image');
             
             // Send to server
             const response = await fetch('/api/process', {
@@ -1233,7 +1365,8 @@ class PhotoBooth {
     }
 
     downloadPhoto() {
-        if (!this.capturedImage) {
+        const currentImage = this.getCurrentFilteredImage();
+        if (!currentImage) {
             this.showError('No photo to download');
             return;
         }
@@ -1247,9 +1380,10 @@ class PhotoBooth {
             // Create download link
             const link = document.createElement('a');
             link.download = `vienna-photo-${new Date().toISOString().slice(0, -5)}.jpg`;
-            link.href = this.capturedImage;
+            link.href = currentImage;
             link.click();
             
+            console.log('Downloading current filtered image');
             this.showSuccess('Photo downloaded successfully');
         } catch (error) {
             this.showError('Download failed: ' + error.message);
@@ -1450,6 +1584,45 @@ class PhotoBooth {
         const printSection = document.querySelector('.print-section');
         if (previewSection) previewSection.style.display = 'block';
         if (printSection) printSection.style.display = 'block';
+        
+        // Initialize preview filter state to match the camera filter
+        this.initializePreviewFilterState();
+    }
+
+    initializePreviewFilterState() {
+        // Only initialize if this is the first time showing preview (no preview filter selected yet)
+        if (this.currentPreviewFilter === 'none') {
+            console.log('Initializing preview filter state for first time');
+            
+            // Reset all preview filter buttons
+            this.previewFilterButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Set the active preview filter to match the camera filter
+            const activePreviewButton = document.querySelector(`.preview-filter-btn[data-filter="${this.selectedFilter}"]`);
+            if (activePreviewButton) {
+                activePreviewButton.classList.add('active');
+            }
+            
+            // Set the current preview filter to match the camera filter
+            this.currentPreviewFilter = this.selectedFilter;
+            
+            // Apply the current filter to the preview
+            this.applyPreviewFilter(this.selectedFilter);
+        } else {
+            console.log('Preserving current preview filter selection:', this.currentPreviewFilter);
+            
+            // Just ensure the UI reflects the current selection
+            this.previewFilterButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            const activePreviewButton = document.querySelector(`.preview-filter-btn[data-filter="${this.currentPreviewFilter}"]`);
+            if (activePreviewButton) {
+                activePreviewButton.classList.add('active');
+            }
+        }
     }
 
     showFrameSection() {
